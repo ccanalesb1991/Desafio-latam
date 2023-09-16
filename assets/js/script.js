@@ -1,107 +1,74 @@
+// FUNCTIONS
 
-
-const taskInput = document.getElementById("tarea-input");
-const addTaskBtn = document.getElementById("add-tarea-btn");
-const taskListContainer = document.getElementById("tarea-list-container");
-const totalSpan = document.getElementById("total-span");
-const completedSpan = document.getElementById("completed-span");
-const incompletedSpan = document.getElementById("incompleted-span");
-const doneCheckInput = document.getElementById("done-check");
-const tasksThead = document.getElementById("tarea-thead");
-const todayDate = document.getElementById("today-date");
-const taskArray = [
-    { id: 1, taskName: "Hacer mercado", taskDone: false },
-    { id: 2, taskName: "Estudiar para la prueba", taskDone: false },
-    { id: 3, taskName: "Sacar a pasear a Tobby", taskDone: false },
-];
-let doneArray = [];
-let taskIdCounter = taskArray[taskArray.length - 1].id;
-let sortByIdFlag = false;
-let sortByTaskFlag = true;
-
-// FUNCIONES
-
-
-const getHtmlTaskList = () => {
-    let flag;
-    html = "";
-
-    taskArray.forEach((task) => {
-        doneCheckInput.checked ? (flag = true) : (flag = !task.taskDone);
-        if (flag) {
-            html += `
-        <div class="tarea-box" id="${task.id}">
-            <input type="checkbox" name="tarea-check" ${
-                task.taskDone ? "checked" : ""
-            }/>
-            <div class="tarea-id">${task.id}</div>
-            <div class="tarea-name">${task.taskName}${
-                task.taskDone
-                    ? '<span class="completed-tarea"> - Completed</span>'
-                    : ""
-            }</div>
-            <i class="fa-regular fa-trash-can"></i>
-        </div>
-        `;
-        }
-    });
-    return html;
+// Request
+const indicatorRequest = async (indicator) => {
+    try {
+        const response = await fetch(`https://mindicador.cl/api/${indicator}`);
+        if (!response.ok) throw new Error("Ocurrió un error");
+        const data = await response.json();
+        return data.serie;
+    } catch (error) {
+        const converterText = document.getElementById("converter-text");
+        converterText.innerText = error;
+        converterText.style.color = "red";
+    }
 };
 
-// Agrega una tarea y limpia el input.
-const addTask = () => {
-    const newTask = {
-        id: ++taskIdCounter,
-        taskName: escapeHTML(taskInput.value),
-        taskDone: false,
+//Preparación de la data a graficar
+const createDataToChart = (dataArray) => {
+    const dataArrayLast10 = dataArray.slice(0, 10);
+    const labels = dataArrayLast10
+        .map((dato) => getNewDateFormat(dato.fecha))
+        .reverse();
+    const data = dataArrayLast10.map((dato) => dato.valor).reverse();
+
+    const datasets = [
+        {
+            label: "CLP",
+            borderColor: "orange",
+            data,
+        },
+    ];
+
+    return { labels, datasets };
+};
+
+// Renderizado de la gráfica
+const renderChart = (dataArray) => {
+    // Verificamos si existe gráfico previo y lo destrimos
+    if (Chart.getChart("indicator-chart"))
+        Chart.getChart("indicator-chart").destroy();
+
+    const data = createDataToChart(dataArray);
+    const config = {
+        type: "line",
+        data,
     };
-    taskArray.push(newTask);
-    renderTaskList();
-    taskInput.value = "";
+
+    new Chart("indicator-chart", config);
 };
 
-// Elimina una tarea
-const deleteTask = (id) => {
-    const index = taskArray.findIndex((element) => element.id == id);
-    taskArray.splice(index, 1);
-    renderTaskList();
+// Obtiene formado de fecha DD/MM
+const getNewDateFormat = (date) => {
+    const dateFormat = new Date(date);
+    const day = dateFormat.getUTCDate();
+    const month = dateFormat.getUTCMonth() + 1; // Sumamos 1 para obtener el mes correcto
+    return (
+        day.toString().padStart(2, "0") +
+        "/" +
+        month.toString().padStart(2, "0")
+    );
 };
 
-// Actualiza el estados de los totales (total, Completadas, No completadas)
-const setTotals = () => {
-    totalSpan.innerHTML = taskArray.length;
-    completedSpan.innerHTML = doneArray.length;
-    incompletedSpan.innerHTML = taskArray.length - doneArray.length;
-};
-
-// Obtiene un array con las tareas completadas.
-const setDoneArray = () => {
-    doneArray = taskArray.filter((element) => {
-        return element.taskDone === true;
+// Obtiene el formato de moneda
+const getCurrencyFormat = (amount) =>
+    amount.toLocaleString("es-CL", {
+        style: "decimal",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
     });
-};
 
-// Renderiza las tareas y actualiza los totales.
-const renderTaskList = () => {
-    taskListContainer.innerHTML = getHtmlTaskList();
-    setDoneArray();
-    setTotals();
-};
-
-// Actualiza la propiedad de "taskDone" en el arreglo de tareas (true/false).
-const toggleDone = (id, state) => {
-    const index = taskArray.findIndex((element) => element.id == id);
-    taskArray[index].taskDone = state;
-};
-
-// Establece el texto que ingresa por el input sin formato.
-const escapeHTML = (html) => {
-    const div = document.createElement("div"); // creamos un div provisional.
-    div.textContent = html; //Establecemos el input como texto sin formato.
-    return div.innerHTML; //Retornamos el contendido del div que establecimos como texto sin formato.
-};
-
-// Retorna la fecha de hoy en formato "'DiaSemana', 'Dia' de 'Mes' de 'Año'"
+// De obtiene el formato de la fecha actual en letras.
 const setDate = () => {
     let meses = new Array(
         "Enero",
@@ -139,63 +106,45 @@ const setDate = () => {
     );
 };
 
+// EVENTS
+const converterBtn = document.getElementById("converter-btn");
 
-// Agrega una nueva tarea
-addTaskBtn.addEventListener("click", () => {
-    if (taskInput.value !== "") {
-        addTask();
+converterBtn.addEventListener("click", async () => {
+    const converterInput = document.getElementById("converter-input");
+    const converterSelect = document.getElementById("converter-select");
+    const converterText = document.getElementById("converter-text");
+    const chartContainer = document.getElementById("chart-container");
+
+    let dataArray = await indicatorRequest(converterSelect.value);
+
+    const inputValue = parseFloat(converterInput.value);
+    const actualValue = parseFloat(dataArray[0].valor);
+
+    if (!isNaN(inputValue)) {
+        const input = getCurrencyFormat(inputValue);
+        const tasa = getCurrencyFormat(actualValue);
+        const total = getCurrencyFormat(inputValue / actualValue);
+        const currencyCodes = {
+            dolar: "USD",
+            uf: "UF",
+            euro: "EUR",
+        };
+
+        converterText.style.color = "black";
+        converterText.innerHTML = `
+            <p class="converter-text-clp"> <span>${input}</span> CLP es igual a:</p>
+            <h3 class="converter-text-total">
+                ${total} ${currencyCodes[converterSelect.value]}
+            </h3>
+            <p class="converter-text-tasa">Tasa: <span>${tasa}</span> CLP - ${setDate()}</p>
+            `;
+        chartContainer.innerHTML = `
+            <canvas id="indicator-chart"></canvas>
+            <p class="chart-title"></p>
+        `;
+        renderChart(dataArray);
+    } else {
+        converterText.innerHTML = "<p>Ingrese un valor válido</p>";
+        converterText.style.color = "red";
     }
 });
-
-// Elimina una tarea o la marca completada/no completada
-taskListContainer.addEventListener("click", (e) => {
-    if (e.target) {
-        const parentId = e.target.parentNode.id;
-        if (e.target.tagName === "I") {
-            deleteTask(parentId);
-        }
-        if (e.target.tagName === "INPUT") {
-            e.target.checked
-                ? toggleDone(parentId, true)
-                : toggleDone(parentId, false);
-            renderTaskList();
-        }
-    }
-});
-
-// Ordena las tareas por ID o por Task, creciente y decreciente.
-tasksThead.addEventListener("click", (e) => {
-    if (e.target && e.target.id === "id-sort-btn") {
-        if (sortByIdFlag === true) {
-            taskArray.sort((a, b) => a.id - b.id);
-            renderTaskList();
-            sortByIdFlag = false;
-        } else {
-            taskArray.sort((a, b) => b.id - a.id);
-            renderTaskList();
-            sortByIdFlag = true;
-        }
-    }
-    if (e.target && e.target.id === "tarea-sort-btn") {
-        if (sortByTaskFlag === true) {
-            taskArray.sort((a, b) => a.taskName.localeCompare(b.taskName));
-            renderTaskList();
-            sortByTaskFlag = false;
-        } else {
-            taskArray.sort((a, b) => b.taskName.localeCompare(a.taskName));
-            renderTaskList();
-            sortByTaskFlag = true;
-        }
-    }
-});
-
-// Muestra u oculta las tareas completadas.
-doneCheckInput.addEventListener("click", (e) => {
-    if (e.target && e.target.name === "done-check") {
-        renderTaskList();
-    }
-});
-
-// Renderizamos las tareas por defecto y seteamos la fecha de hoy.
-renderTaskList();
-todayDate.innerHTML = setDate();

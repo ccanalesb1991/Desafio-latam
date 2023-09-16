@@ -4,76 +4,35 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./assets/css/style.css" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet" />
-    <script src="https://kit.fontawesome.com/c6926bf7a6.js" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="./assets/css/style.css" />
-    <script src="./assets/js/script.js" defer></script>
-    <title>TODO List</title>
+    <title>Conversor de monedas</title>
 </head>
 
 <body>
-    <section class="todo-container">
 
+    <section class="converter-container">
+        <h1 class="converter-title">Conversor de Monedas</h1>
+        <label for="converter-input">Pesos Chilenos:</label>
+        <input type="number" class="text-input" id="converter-input" step="0.01" placeholder="monto en CLP" />
+        <label for="converter-select">a:</label>
+        <select class="select-input" name="converter-select" id="converter-select">
+            <option value="dolar">Dolar Observado</option>
+            <option value="euro">Euro</option>
+            <option value="uf">Unidad de Fomento</option>
+        </select>
 
-
-        <div class="todo-head">
-            
-            <h2>Lista de tareas</h2>
-            <p id="today-date">Miércoles, 20 de Septiembre 2023</p>
-        </div>
-        <div class="todo-add-tarea">
-
-            <div class="input-box">
-                <input class="text-input" id="tarea-input" type="text" placeholder="Ingrese Nueva Tarea:"
-                    autocomplete="off" required />
-                <label for="tarea-input" class="label">New tarea</label>
-                <div class="add-tarea-btn-box">
-                    <p id="add-tarea-btn">Agregar</p>
-                </div>
-            </div>
-            
-        </div>
-
-        <section class="footer">
-
-
-            <div class="todo-footer">
-                <p>Total: <span id="total-span"></span></p>
-                <p>Completadas: <span id="completed-span"></span></p>
-                <p>No Completadas: <span id="incompleted-span"></span></p>
-            </div>
-
-
-            <div class="tarea-list">
-                <div class="tarea-list-head">
-                    <div class="tarea-thead" id="tarea-thead">
-                        <p class="id-head">
-                            <i id="id-sort-btn" class="fa-solid fa-sort"></i> ID
-                        </p>
-                        <p class="tarea-head">
-                            <i id="tarea-sort-btn" class="fa-solid fa-sort"></i>
-                            Tarea
-                        </p>
-                    </div>
-
-                    <div class="done-check" id="done-check-box">
-                        <input type="checkbox" name="done-check" id="done-check" />
-                        <label for="done-check">Mostrar Completadas</label>
-                    </div>
-
-                </div>
-
-                <div id="tarea-list-container"></div>
-            </div>
-
-
-        </section>
-
-
-
+        <button class="btn" id="converter-btn">Convertir</button>
+        <div class="converter-text" id="converter-text"></div>
+        <div id="chart-container"></div>
     </section>
+
+
+    <script src="./assets/js/script.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
 </body>
 
 </html>
